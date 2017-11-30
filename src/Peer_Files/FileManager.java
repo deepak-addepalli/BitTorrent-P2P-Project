@@ -1,6 +1,3 @@
-
-
-
 package Peer_Files;
 
       import Logging.logrecord;
@@ -12,16 +9,16 @@ package Peer_Files;
 
 public class FileManager
 {
-    private final int peerId;   //peer
+    private final int peerId;   
     private String fileName;
-    private final boolean hasCompleteFile;  //peer
+    private final boolean hasCompleteFile; 
     private final BitSet piecesPeerContains;
-    private final int pieceSize;    // common_cfg
-    public static  int numOfPieces;  // common_cfg
-    private int fileSize;          // common_cfg - same as above
+    private final int pieceSize;   
+    public static  int numOfPieces; 
+    private int fileSize;         
     public static String partFilesPath;
     public static String outputFilePath;
-    private BitSet piecesRequested;   // used for request message
+    private BitSet piecesRequested;  
     public static String fileCreationPath;
 
     PeerSetup peersetupobj = null;
@@ -32,7 +29,7 @@ public class FileManager
         hasCompleteFile = peer.hasFile();
         pieceSize = Integer.parseInt(obj.getProperty("PieceSize"));
         fileSize = Integer.parseInt(obj.getProperty("FileSize"));
-        numOfPieces = (int) Math.ceil ((float)fileSize/(float)pieceSize);   //number of parts in the file
+        numOfPieces = (int) Math.ceil ((float)fileSize/(float)pieceSize);  
         this.peersetupobj = peersetupobj;
         fileName = obj.getProperty("FileName");
         fileCreationPath = "./peer_"+peerId+"/files/" + fileName;
@@ -50,10 +47,7 @@ public class FileManager
 
             try
             {
-
-                splitFile(pieceSize, fileCreationPath, partFilesPath);
-
-                                                                            //  here path of the file to be given
+                splitFile(pieceSize, fileCreationPath, partFilesPath);  
             }
             catch(Exception e)
             {
@@ -61,8 +55,6 @@ public class FileManager
             }
         }
 
-        //else
-           // throw new Exception("FileManager could not be initialized");
     }
 
     public BitSet partsPeerHas()
@@ -70,15 +62,6 @@ public class FileManager
         return (BitSet)piecesPeerContains.clone();
     }
 
-    /*
-     * A function that does the following - update piece index by calling piece arrived and sends have message to all connected
-     * peers, save file to directory, merge file if all pices have arrived.
-     * @author  Kunal Bajaj
-     * @params  int i - index of the arrived piece
-     * @params  byte[] p - file piece that needs to be added in terms of a byte array
-     * @params  ID of the peer from whom we are recieving the part
-     * @returns void
-    */
     public synchronized void addPiece(int i, byte[] p)
     {
 
@@ -111,14 +94,7 @@ public class FileManager
         }
     }
 
-    /*
-     * A simple function that takes in piece index and byte array and writes it to parts directory of the peer
-     * @author  Kunal Bajaj
-     * @params  index of the piece
-     * @params  byte array that needs to be written to file
-     * @returns void
-     * @throws  IOException, FileNotFoundException
-    */
+   
     public  void saveToDirectory(int i, byte[] p)
     {
         FileOutputStream op = null;
@@ -148,22 +124,7 @@ public class FileManager
 
     }
 
-    /*
-     * Function that handles operations to do when a piece arrives.
-     * These operations include updating _partsPeerHas bitset and creating a new Have message to be sent to all connected peers.
-     * @author  Kunal Bajaj
-     * @params  int index - the index of the piece that has arrived.
-     * @returns void
-     */
-
-
-    /*
-     * Function that checks if the peer has a certain part and returns a boolean value as answer.
-     * This is done using _partsPeerHas bitset.
-     * @author      Kunal Bajaj
-     * @parameters  index of the part that needs to be set
-     * @returns     void
-     */
+    
     public synchronized boolean hasPart(int index)
     {
         return index >=0 && index<piecesPeerContains.size() && piecesPeerContains.get(index) == true;
@@ -222,24 +183,13 @@ public class FileManager
         return null;
     }
 
-    /*
-     * A functiont that simply returns the parts that have been currently requested.
-     * @author  Kunal Bajaj
-     * @params  None
-     * @returns  void
-    */
+    
     public synchronized BitSet partsBeingRequested()
     {
         return piecesRequested;
     }
 
-    /*
-     * A function that returns a part index that needs to be requested.
-     * First we check whether the remote peer has an  interesting part. If it does then we randomly select a part from them and request for that part
-     * @author  Kunal Bajaj
-     * @params  BitSet partsRemotePeerHas -  a bitset containing information about the parts a remotePeerHas
-     * @returns index of the part to request
-    */
+
     synchronized int partsToRequest(BitSet partsRemotePeerHas)
     {
         //check if the remote peer has some interesting part. This function clears all bits in partsRemotePeerHas that are set in _partsPeerHas
@@ -287,14 +237,7 @@ public class FileManager
         return -1;
     }
 
-    /*
-     * A function that determines when all parts have been received.
-     * This function will help to determine when we need to merge the files.
-     * If any value in _partsPeerHas is 0 then it returns false else it returns true
-     * @author  Kunal Bajaj
-     * @params  None
-     * @returns void
-    */
+
     private boolean isFileCompleted()
     {
         for (int i = 0; i < numOfPieces; i++)
@@ -305,15 +248,7 @@ public class FileManager
         return true;
     }
 
-    /*
-     * A function that splits file into pieces. Each piece is of size = _partSize.
-     * This is done only for peers that have the complete file.
-     * @author  Kunal Bajaj
-     * @params  partSize - the size of each part in bytes
-     * @params  path - The directory where the file is present.
-     * @returns void
-     * @throws  IOException/Invalid parameters Exception
-     */
+
     private void splitFile(int partSize, String _fileCreationPath, String _PartsPath) throws Exception
     {
         //Proceed only when part size is greater than zero
