@@ -1,11 +1,14 @@
-package Peer_Files;
+package Peer_Related;
 import Logging.logrecord;
 
 import java.util.*;
 
+/**
+ * Created by Harshit Vijayvargia on 4/3/2017.
+ */
 public class OptimisticUnchoke implements Runnable {
 
-    ArrayList<PeerInfo> unchokable = new ArrayList<PeerInfo>();
+    LinkedList<PeerInfo> unchokable = new LinkedList<PeerInfo>();
     HashSet<Integer> unchokablePeerIds = new HashSet<Integer>();
     PeerSetup _peerSetupObj;
 
@@ -15,7 +18,7 @@ public class OptimisticUnchoke implements Runnable {
         _peerSetupObj = obj;
     }
 
-    synchronized void setUnchokable(ArrayList<PeerInfo> unchokablePeers)
+    synchronized void setUnchokable(LinkedList<PeerInfo> unchokablePeers)
     {
         unchokable.clear();                                                   //changes
         unchokable = unchokablePeers;
@@ -32,7 +35,7 @@ public class OptimisticUnchoke implements Runnable {
         {
             //Simple way of selecing unchokable neighbor
             Collections.shuffle(unchokable);
-            int peerId = unchokable.get(0).getPeerId();
+            int peerId = unchokable.getFirst().peerId;
 
             logrecord.getLogRecord().changeOfOptimisticallyUnchokedNeighbors(peerId);
            // logrecord.getLogRecord().changeOfOptimisticallyUnchokedNeighbors(peerId);

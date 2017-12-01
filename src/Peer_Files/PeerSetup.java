@@ -1,6 +1,6 @@
-package Peer_Files;
+package Peer_Related;
 
-
+import All_Messages.*;
 import java.io.IOException;
 import java.net.*;
 import java.util.*;
@@ -8,75 +8,51 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import Logging.logrecord;
-import Message_Files.*;
-import Peer_Files.*;
+import Peer_Related.*;
 
 public class PeerSetup implements Runnable {
     static FileManager fileManager;
     static PeerManager peerManager;
     static PeerInfo peer;
     Vector<Handler> connectionsList = new Vector<>();
-    static ArrayList<PeerInfo> peers = new ArrayList<PeerInfo>();
-
+    static LinkedList<PeerInfo> peers = new LinkedList<PeerInfo>();
     public  AtomicBoolean isFileCompleted = new AtomicBoolean(false);
     public AtomicBoolean areNeighboursCompleted = new AtomicBoolean(false);
     public AtomicBoolean EndPeerProcess = new AtomicBoolean(false);
-
-    // to Store Connection handlers for a peer and make it thread safe.
-    //  Set<Handler> handlerSet = Collections.newSetFromMap(new ConcurrentHashMap<Handler,Boolean>());
-
     static Properties common_cfg = new Properties();
-
-    PeerSetup(Properties common_cfg, ArrayList<PeerInfo> peers, PeerInfo peer) throws Exception {
+    
+    PeerSetup(Properties common_cfg, LinkedList<PeerInfo> peers, PeerInfo peer) throws Exception {
         this.peers = peers;
         this.common_cfg = common_cfg;
         this.peer = peer;
 
         fileManager = new FileManager(this.peer,common_cfg,this);
 
-        //making peers to connect to list
-        ArrayList<PeerInfo> peersExceptLocal = new ArrayList<>(removePeer(peers, peer.getPeerId()));
+        LinkedList<PeerInfo> peersExceptLocal = new LinkedList<>(removePeer(peers, peer.peerId));
         peerManager = new PeerManager(peersExceptLocal, this);
     }
-
     void startingThreadsandMethods()
     {
         Thread t = new Thread(peerManager);
         t.setName("PeerManager Thread");
         t.start();
     }
-
-// this thread for making peer as a server
-
-
     public void run() {
         try
         {
-            ServerSocket serversok = new ServerSocket(Integer.parseInt(peer.listeningPort));
+            ServerSocket serversok = new ServerSocket(peer.listeningPort);
             while(!EndPeerProcess.get()){
-                    //System.out.println("here2");
                     Socket s = serversok.accept();
-                    //  if(s==null)
-                    // continue;
-                    // else
-
-                    //System.out.println("here2");
-                    Handler conn = new Handler(s,Integer.parseInt(peer.peerId),-1,fileManager,peerManager);
-                    //System.out.println("here" + conn.peerId);
+                    Handler conn = new Handler(s,peer.peerId,-1,fileManager,peerManager);
                     addConnection(conn);
-
-
             }
         }
         catch(Exception e)
         {
-           // System.exit(0);
             e.printStackTrace();
-            System.out.println(peer.getPeerId());
+            System.out.println(peer.peerId);
         }
-
             }
-
             public static void closeSockets(Vector<Handler> connectionsList)
             {
                 for(Handler h : connectionsList)
@@ -89,17 +65,15 @@ public class PeerSetup implements Runnable {
                 }
 
             }
-
-
     public void connectToOtherPeers(){
-        Queue<PeerInfo> _listOfPeers = getConnectList(peers,peer.getPeerId());
+        Queue<PeerInfo> _listOfPeers = getConnectList(peers,peer.peerId);
         while(_listOfPeers!=null && !_listOfPeers.isEmpty())
         {
             Socket sok = null;
             PeerInfo r = _listOfPeers.poll();
             try {
-                sok = new Socket(r.hostName, r.getPort());
-                Handler conn = new Handler(sok,peer.getPeerId(),r.getPeerId(),fileManager,peerManager);
+                sok = new Socket(r.hostName, r.listeningPort);
+                Handler conn = new Handler(sok,peer.peerId,r.peerId,fileManager,peerManager);
                   addConnection(conn);
                // Thread.sleep(10);
 
@@ -112,8 +86,6 @@ public class PeerSetup implements Runnable {
             }
 
         }
-
-
     public synchronized void addConnection(Handler conn) {
         if (!connectionsList.contains(conn)) {
             connectionsList.add(conn);
@@ -125,51 +97,33 @@ public class PeerSetup implements Runnable {
             }
         }
     }
-
-
-
-
-
-
-// this method removes the peer from the peer list and sends the new peer list
-
-    ArrayList<PeerInfo> removePeer(ArrayList<PeerInfo> peers, int peerId)
+    LinkedList<PeerInfo> removePeer(LinkedList<PeerInfo> peers, int peerId)
     {
-        ArrayList<PeerInfo> newPeers = new ArrayList<PeerInfo>();
+        LinkedList<PeerInfo> newPeers = new LinkedList<PeerInfo>();
 
         for(PeerInfo p : peers)
         {
-            if (peerId == p.getPeerId()) { continue;}
+            if (peerId == p.peerId) { continue;}
             else { newPeers.add(p);}
         }
         return newPeers;
     }
-
-    Queue<PeerInfo> getConnectList(ArrayList<PeerInfo> peers, int peerId)
+    Queue<PeerInfo> getConnectList(LinkedList<PeerInfo> peers, int peerId)
     {
         Queue<PeerInfo> newPeers = new LinkedList<PeerInfo>();
 
         for(PeerInfo p : peers)
         {
-            if (peerId == p.getPeerId()) {break;}
+            if (peerId == p.peerId) {break;}
             else { newPeers.add(p);}
         }
         return newPeers;
     }
-
-
     public static PeerInfo getPeer()
     {
         return peer;
     }
 
-    /*
-     * A function that takes in a collection of PeerIDs and uses connectionhandler vector to unchoke certain neigbors
-     * @name    unchokePeers
-     * @author  Kunal Bajaj
-     * @params  Collection of peerIDs that need to be unchoked
-     * @returns nothing
-    */
     public synchronized void unchokePeers(Collection<Integer> peerIDsToUnchoke)
     {
         if(peerIDsToUnchoke!=null && !peerIDsToUnchoke.isEmpty())
@@ -181,7 +135,7 @@ public class PeerSetup implements Runnable {
                     for (Handler temp : connectionsList)
                     {
                         if(temp.remotePeerId.get() == currentPeer)
-                            temp.pushInQueue(new Message_Related.Unchoke());
+                            temp.pushInQueue(new Messages("Unchoke"));
 
                     }
                 }
@@ -199,7 +153,7 @@ public class PeerSetup implements Runnable {
                     for (Handler temp : connectionsList)
                     {
                         if(temp.remotePeerId.get() == currentPeer)
-                            temp.pushInQueue(new Message_Related.Uninterested());
+                            temp.pushInQueue(new Messages("Uninterested"));
 
                     }
                 }
@@ -207,15 +161,6 @@ public class PeerSetup implements Runnable {
         }
     }
 
-
-
-    /*
-     * A function that takes in a collection of PeerIDs and uses connectionhandler vector to unchoke certain neigbors
-     * @name    unchokePeers
-     * @author  Kunal Bajaj
-     * @params  Collection of peerIDs that need to be unchoked
-     * @returns nothing
-    */
     public synchronized void chokePeers(Collection<Integer> peerIDsToChoke)
     {
         if(peerIDsToChoke!=null && !peerIDsToChoke.isEmpty())
@@ -227,7 +172,7 @@ public class PeerSetup implements Runnable {
                     for (Handler temp : connectionsList)
                     {
                         if(temp.remotePeerId.get() == currentPeer)
-                            temp.pushInQueue(new Message_Related().getChoke());
+                            temp.pushInQueue(new Messages("Choke"));
 
                     }
                 }
@@ -235,44 +180,35 @@ public class PeerSetup implements Runnable {
         }
     }
 
- /*the process should close when all have finished downloading the whole file*/
-
     public void FileHasCompleted() {
         peerManager.setPeerFileCompleted();
         isFileCompleted.set(true);
         if (isFileCompleted.get() && areNeighboursCompleted.get()) {
             logrecord.getLogRecord().fileComplete();
             EndPeerProcess.set(true);
-            //logrecord.getLogRecord().fileComplete();
             logrecord.getLogRecord().closeLogger();
 
 
-           //System.exit(0);
+//           System.exit(0);
         }
     }
-    /*the process should close when all have finished downloading the whole file*/
     public void NeighboursHaveCompleted() {
         areNeighboursCompleted.set(true);
         if (isFileCompleted.get() && areNeighboursCompleted.get()) {
             EndPeerProcess.set(true);
             logrecord.getLogRecord().closeLogger();
 
-          //System.exit(0);
+//          System.exit(0);
         }
     }
-    /*method for Sending have messages to all peers after receiving new parts.
-     * If peers no longer have interesting parts method sends not interested message
-     * */
     public synchronized void gotPart(int partindex){
         for (Handler conn : connectionsList) {
-            conn.pushInQueue(new Message_Related.Have(partindex));
+            conn.pushInQueue(new Messages("Have",partindex));
             if (!peerManager.stillInterested(conn.getRemotePeerId(), fileManager.partsPeerHas()))
             {
 
-                conn.pushInQueue(new Message_Related.Uninterested());
+                conn.pushInQueue(new Messages("Uninterested"));
             }
         }
     }
-
-
 }

@@ -1,4 +1,4 @@
-package Peer_Files;
+package Peer_Related;
 
 import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -6,26 +6,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.*;
 
 public class PeerInfo {
-    public final String peerId;
+    public final int peerId;
     public final String hostName;
-    public final String listeningPort;
+    public final int listeningPort;
     public final boolean hasFile;
-    public AtomicInteger _bytesDownloadedFrom;   //from this peer how many bytes have been downloaded
-    public BitSet _receivedParts;                 // how many parts this peer has received
-    public AtomicBoolean _interested ;      // is the the interested peer
+    public AtomicInteger _bytesDownloadedFrom;   
+    public BitSet _receivedParts;                 
+    public AtomicBoolean _interested ;      
 
     public PeerInfo(String pID, String hName, String lPort, String hFile)
     {
-        peerId = pID;
+        peerId = Integer.parseInt(pID);
         hostName = hName;
-        listeningPort = lPort;
-        if(hFile.equals("1")){
-        	hasFile=true;
-        }
-        else{
-        	hasFile=false;
-        }
-        //To understand
+        listeningPort = Integer.parseInt(lPort);
+        hasFile = hFile.equals("1")?true:false;
         _bytesDownloadedFrom = new AtomicInteger (0);
         _receivedParts = new BitSet();
         _interested = new AtomicBoolean (false);
@@ -33,46 +27,48 @@ public class PeerInfo {
     }
 
 
-
-    // A method to return peerId if i send it a list of peers
-    static HashSet<Integer> getPeerIds(ArrayList<PeerInfo> peers)
+    static HashSet<Integer> getPeerIds(LinkedList<PeerInfo> peers)
     {
         HashSet<Integer> peerIds = new HashSet<Integer>();
      if(peers!=null && !peers.isEmpty()){
-
-        for(PeerInfo p : peers)
+        int i=0;
+        while(i<peers.size())
         {
-            peerIds.add(p.getPeerId());
+            peerIds.add(peers.get(i).peerId);
+            i++;
         }
-
-
     }
         return peerIds;}
 
 
-    public static PeerInfo getPeerByPeerId(int peerId, ArrayList<PeerInfo> list)
+    public static PeerInfo getPeerByPeerId(int peerId, LinkedList<PeerInfo> list)
     {
-
-       for(PeerInfo p : list)
+       int i=0;
+       while(i<list.size()) 
        {
-           if(p.getPeerId()==peerId)
-           {return p;}
+           if((list.get(i).peerId)==peerId)
+           {
+        	   return list.get(i);
+           }
+           else
+        	   i++;
        }
        return null;
     }
-    public int getPeerId() {
-        return Integer.parseInt(peerId);
-    }
+    
+  /*  public int getPeerId() {
+        return peerId;
+    }*/
 
-    public int getPort() {
-        return Integer.parseInt(listeningPort);
-    }
+   /* public int getPort() {
+        return listeningPort;
+    }*/
 
     public String getPeerAddress() {
-        return listeningPort;
+        return hostName;
     }
 
-    public boolean hasFile() {
+  /*  public boolean hasFile() {
         return hasFile;
     }
 
@@ -89,5 +85,5 @@ public class PeerInfo {
     public void setNotIterested() {
         _interested.set (false);
     }
-
+*/
 }
