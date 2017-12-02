@@ -1,4 +1,5 @@
 package Peer_Related;
+import java.util.ArrayList;
 import Logging.logrecord;
 import Peer_Related.*;
 
@@ -10,101 +11,59 @@ import java.util.logging.Level;
 
 public class PeerProcess {
 
-    static String CONFIGFILENAME =  "Common.cfg";      
-    static String PEERINFOFILENAME= "PeerInfo.cfg";
-    static Properties common_cfg ;
-    final static LinkedList<PeerInfo> peers = new LinkedList<PeerInfo>();
-    public static void main(String args[]) throws Exception {
-
-        int peerId = 1003;
-      
-        //int peerId = Integer.parseInt(args[0]);
-        Reader commonReader =null;
-        Reader peerReader =null;
-        common_cfg = readCommonFile(commonReader);
-        readPeerFile(peerReader);
-        logrecord.getLogRecord().setLoggerForPeer(peerId);
-        PeerInfo peer = PeerInfo.getPeerByPeerId(peerId,peers);
-        try {
-            PeerSetup peerSetup = new PeerSetup(common_cfg, peers, peer);
-            peerSetup.startingThreadsandMethods();
-            Thread t = new Thread(peerSetup);
-            t.setName("Making peer as server thread");
-            t.start();
-            peerSetup.connectToOtherPeers();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-    }
-
-    static Properties readCommonFile(Reader commonReader) {
-        Properties cProperty = new Properties() {
-            public synchronized void load(Reader commonReader) {
-
-                try {
-                    commonReader = new FileReader(CONFIGFILENAME);
-
-                    BufferedReader cReader = new BufferedReader(commonReader);
-
-                    int i=0;
-
-                    for (String line; (line = cReader.readLine()) != null; i++) {
-                        String arr[] = line.split(" ");
-                        setProperty(arr[0], arr[1]);
-
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                finally
-                {
-
-                    try {
-                        commonReader.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-            }
-
-        };
-        try {
-            cProperty.load(commonReader);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return cProperty;
-    }
-    static void readPeerFile(Reader peerReader) {
-        try {
-            peerReader = new FileReader(PEERINFOFILENAME);
-            BufferedReader pReader = new BufferedReader(peerReader);
+	static String common_info =  "Common.cfg";
+	static String peer_info= "PeerInfo.cfg";
+	static Properties common_cfg = new Properties();
+	final static ArrayList<PeerData> allPeers = new ArrayList<PeerData>();
 
 
-            int i=0;
-            for (String line; (line = pReader.readLine()) != null; i++) {
-                String arr[] = line.split(" ");
-                peers.add(new PeerInfo(arr[0], arr[1], arr[2], arr[3]));
+	public static void main(String args[]){
 
+//		int peerId = Integer.valueOf(args[0].trim());
+		int peerId=1003;
+		String line = null;
 
+		try {
+			BufferedReader buffer = new BufferedReader(new FileReader(common_info));
 
-            }
+			while((line=buffer.readLine())!=null) {
+				String[] temp = line.split(" ");
+				common_cfg.setProperty(temp[0], temp[1]);
+			}
+			buffer.close();
+		}
+		catch (Exception e) {
+			System.err.println(e);;
+		}
 
+		try {
+			BufferedReader buffer = new BufferedReader(new FileReader(peer_info));
+			while((line = buffer.readLine())!=null)
+			{
+				String temp[] = line.split(" ");
+				allPeers.add(new PeerData(Integer.valueOf(temp[0].trim()),temp[1],Integer.valueOf(temp[2].trim()),Integer.valueOf(temp[3].trim())));
+			}
+			buffer.close();
+		}
+		catch(Exception e) {
+			System.err.println(e);;
+		}
 
-        } catch (Exception e) {
+		logrecord.getLogRecord().setLoggerForPeer(peerId);
 
-        }
-        finally
-        {
-            try {
-                peerReader.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    }
+		PeerData peer = PeerData.getPeerByPeerId(peerId,allPeers);
+
+		try {
+			CreatePeers peer_setup = new CreatePeers(common_cfg, allPeers, peer);
+			peer_setup.startingThreadsandMethods();
+			Thread t = new Thread(peer_setup);
+			t.start();
+			peer_setup.connectToOtherPeers();
+		}
+		catch (Exception e)
+		{
+			System.err.println(e);
+		}
+
+	}
+}
