@@ -6,10 +6,6 @@ import java.util.logging.*;
 import java.util.logging.*;
 import java.util.logging.Formatter;
 
-
-/**
- * Created by Harshit Vijayvargia on 3/28/2017.
- */
 public class logrecord {
 
     public static Logger peerLogger;
